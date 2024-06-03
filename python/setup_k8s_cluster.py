@@ -80,6 +80,7 @@ aws ec2 create-tags --resources $instance_id --tags Key=Name,Value=k8s-master
 KUBEADM_INIT = """
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 echo $IP_ADDRESS
+# --ignore-preflight-errors=all was used to bypass the CPU and Memory requirements check when using t2.small and below
 sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --control-plane-endpoint=$IP_ADDRESS --ignore-preflight-errors=all
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
