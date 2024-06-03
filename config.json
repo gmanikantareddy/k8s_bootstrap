@@ -1,0 +1,10 @@
+{
+    "region": "us-east-1",
+    "ami_id": "ami-04b70fa74e45c3917",
+    "instance_type": "t2.micro",
+    "key_name": "k8s_bootstrap",
+    "security_group_name": "k8s-sg",
+    "master_instance_count": 1,
+    "worker_instance_count": 3
+  }
+  

@@ -1,0 +1,3 @@
+venv_boto3/
+k8s_bootstrap.pem
+output.log
