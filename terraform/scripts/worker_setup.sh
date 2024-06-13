@@ -1,6 +1,9 @@
 #!/bin/bash
 
-MASTER_IP=$1
+
+echo "${key_file_content}" | base64 --decode > /tmp/terraform-keypair.pem
+chmod 600 /tmp/terraform-keypair.pem
+
 
 # Disable swap
 sudo swapoff -a
@@ -54,7 +57,21 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 
 
-
+echo whoami $(whoami)
 # Join the Kubernetes cluster
-JOIN_COMMAND=$(ssh -o StrictHostKeyChecking=no -i /tmp/terraform-keypair.pem ubuntu@$MASTER_IP "cat /tmp/join_command.sh")
+JOIN_COMMAND=""
+while true; do
+  # Execute the command
+  JOIN_COMMAND=$(ssh -o StrictHostKeyChecking=no -i /tmp/terraform-keypair.pem ubuntu@${MASTER_IP} "cat /tmp/join_command.sh")
+
+  # Check the exit status of the command
+  if [ $? -eq 0 ]; then
+    echo "Command succeeded!"
+    break
+  else
+    echo "Command failed, retrying in 5 seconds..."
+    sleep 5
+  fi
+done
+echo JOIN_COMMAND $JOIN_COMMAND
 eval sudo $JOIN_COMMAND

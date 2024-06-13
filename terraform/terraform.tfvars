@@ -1,9 +1,10 @@
 region               = "ap-south-1"
 ami_id               = "ami-0f58b397bc5c1f2e8"
 instance_type_master = "t2.small"
-instance_type_worker = "t2.micro"
+instance_type_worker = "t2.small"
 key_name             = "terraform-keypair"
 private_key_path     = "terraform-keypair.pem"
 security_group_name  = "k8s-sg"
 master_instance_count = 1
-worker_instance_count = 3
+worker_instance_count = 2
+private_key          = "private.key"

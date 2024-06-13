@@ -29,6 +29,11 @@ variable "private_key_path" {
   type        = string
 }
 
+variable "private_key" {
+  description = "Path to the private key file"
+  type        = string
+}
+
 variable "security_group_name" {
   description = "Name of the security group"
   type        = string

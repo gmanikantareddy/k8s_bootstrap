@@ -55,6 +55,20 @@ resource "aws_security_group" "k8s_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+   ingress {
+    from_port   = 179
+    to_port     = 179
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+    ingress {
+    from_port   = 8472
+    to_port     = 8472
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -69,95 +83,75 @@ resource "aws_instance" "master" {
   instance_type = var.instance_type_master
   key_name      = var.key_name
   security_groups = [aws_security_group.k8s_sg.name]
+  iam_instance_profile = aws_iam_instance_profile.ec2_k8smaster_instance_profile.name
 
   tags = {
     Name = "k8s-master"
   }
 
-    provisioner "file" {
-      source      = "scripts/master_setup.sh"
-      destination = "/tmp/master_setup.sh"
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /tmp/master_setup.sh",
-      "sudo /tmp/master_setup.sh"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-
-
-  }
-
-
+  user_data = templatefile("scripts/master_setup.sh", {
+    region = var.region
+    worker_count = var.worker_instance_count
+    sc_file_content = base64encode(file("aws_storageclass.yaml"))
+  })
 }
 
 
 resource "aws_instance" "worker" {
+  depends_on = [aws_instance.master]
   count         = var.worker_instance_count
   ami           = var.ami_id
   instance_type = var.instance_type_worker
   key_name      = var.key_name
   security_groups = [aws_security_group.k8s_sg.name]
+  iam_instance_profile = aws_iam_instance_profile.ec2_k8sworker_instance_profile.name
 
   tags = {
     Name = "k8s-worker"
   }
 
-    provisioner "file" {
-      source      = "scripts/worker_setup.sh"
-      destination = "/tmp/worker_setup.sh"
-    
-     connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
+  user_data = templatefile("scripts/worker_setup.sh", {
+    MASTER_IP = aws_instance.master.0.public_ip
+    key_file_content = base64encode(file("terraform-keypair.pem"))
+  })
 
-      provisioner "file" {
-      source      = "terraform-keypair.pem"
-      destination = "/tmp/terraform-keypair.pem"
-    
-     connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
+}
+
+resource "null_resource" "wait_for_master_setup" {
+  count = var.master_instance_count
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("terraform-keypair.pem")
+    host        = element(aws_instance.master.*.public_ip, count.index)
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod 600 /tmp/terraform-keypair.pem",
-      "chmod +x /tmp/worker_setup.sh",
-      "sudo /tmp/worker_setup.sh ${aws_instance.master.0.public_ip}"
+      "while [ ! -f /tmp/assmp_updated ]; do echo 'Waiting for setup to complete...'; sleep 10; done"
     ]
-
-    connection {
-      type        = "ssh"
-      user        = "ubuntu"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-
-
   }
 
-
+  depends_on = [aws_instance.master]
 }
+
+
+data "aws_ssm_parameter" "argo_port" {
+
+  depends_on = [null_resource.wait_for_master_setup]
+  name = "/argoapp/server/config/nodeport"
+
+  
+}
+
+data "aws_ssm_parameter" "argo_pass" {
+
+  depends_on = [null_resource.wait_for_master_setup]
+  name = "/argoapp/server/config/initialadminpass"
+
+  
+}
+
+
 

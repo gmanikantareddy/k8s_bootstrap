@@ -2,3 +2,4 @@
 .terraform.lock.hcl
 terraform-keypair.pem
 *terraform.tfstate*
+.kube/
