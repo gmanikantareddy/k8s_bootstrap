@@ -7,4 +7,3 @@ private_key_path     = "terraform-keypair.pem"
 security_group_name  = "k8s-sg"
 master_instance_count = 1
 worker_instance_count = 2
-private_key          = "private.key"

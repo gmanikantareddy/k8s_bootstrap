@@ -1,8 +1,8 @@
 
 # AWS Kubernetes Cluster Setup
 
-This script automates the setup of a Kubernetes cluster on AWS using EC2 instances with Ubuntu 20.04 LTS. It creates one master node and multiple worker nodes, configuring them with containerd as the container runtime and Calico as the network plugin.
-
+This script automates the setup of a Kubernetes cluster on AWS using EC2 instances with Ubuntu 20.04 LTS. It creates one master node and multiple worker nodes, configuring them with containerd as the container runtime and Flannel as the network plugin.
+It also bootstraps the cluster with Argo CD. Argo CD installs a jenkins server using helm charts.
 ## Prerequisites
 
 Before running the script, make sure you have:
@@ -41,8 +41,10 @@ The `terraform.tfvars` file contains the configuration parameters for the script
 
 -   `region`: AWS region where the EC2 instances will be launched.
 -   `ami_id`: ID of the Ubuntu 20.04 LTS AMI in the specified region.
--   `instance_type`: EC2 instance type (e.g., t2.micro).
+-   `instance_type_master`: EC2 instance type (e.g., t2.medium).
+-   `instance_type_worker`: EC2 instance type (e.g., t2.small).
 -   `key_name`: Name of the SSH key pair used for accessing the instances.
+-   `private_key_path`: Path to the pem file which will be used by worker nodes to access the master node.
 -   `security_group_name`: Name of the security group for the EC2 instances.
 -   `master_instance_count`: Number of master nodes in the Kubernetes cluster.
 -   `worker_instance_count`: Number of worker nodes in the Kubernetes cluster.
